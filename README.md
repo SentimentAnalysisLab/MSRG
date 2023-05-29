@@ -1,8 +1,8 @@
 # Multimodal Sentiment Recognition with Residual Gating Network and Sentiment Intensity Attention
 Code for paper "Multimodal Sentiment Recognition with Residual Gating Network and Sentiment Intensity Attention".
 
-<p align="center">
-  <img width="600" src="msrg-pic.png">
+<p>
+  <img width="800" src="msrg-pic.png">
 </p>
 
 ### Setup the environment
