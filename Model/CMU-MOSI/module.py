@@ -53,7 +53,7 @@ class JCAF(nn.Module):
         self.W_ht = nn.Linear(k, l, bias=False)
 
 
-        self.AMLP = AMLP(128)       #MFB(2,128) CBP(128,128,128) ,MLB(2,128)
+        self.AMLP = AMLP(128)       
         self.Dense = nn.Linear(128*3, 128)
 
 
@@ -67,26 +67,6 @@ class JCAF(nn.Module):
         vis_fts = f3_norm  # [k, l, 128]
 
         G = self.AMLP(txt_fts, aud_fts, vis_fts)
-        ##############################################################################
-        # 用于AMLP消融 (和 MFB,CBP,MLB 对比)
-
-        # G1 = self.AMLP(txt_fts, aud_fts)
-        # G2 = self.AMLP(txt_fts, vis_fts)
-        # G3 = self.AMLP(aud_fts, vis_fts)
-
-        # 连接方式消融（对应加，全连接，对应乘）
-
-        # 对应加
-        # G=G1+G2+G3
-        #
-        # 全连接
-        # G=self.Dense(torch.concat([G1, G2, G3], dim=2))
-        #
-        # 对应乘
-        # G = G1 * G2 * G3
-        # amlp = AMLP(f1_norm.shape[2], f1_norm.shape[2], f1_norm.shape[2])
-        # G = amlp(txt_fts, aud_fts, vis_fts)
-        #############################################################################
 
         for i in range(f1_norm.shape[0]):
             G_ag = torch.concat((aud_fts[i], G[i, :, :]), 1)  # [l, 128]连接[l, 128] -> [l, 256]
@@ -151,127 +131,3 @@ class AMLP(nn.Module):
         z = self.pool(exp_out) * 2
         z = F.normalize(z)
         return z
-
-    # 双模态带有自适应因子思想（用于AMLP消融研究）
-    # def forward(self, feat1, feat2):
-    #
-    #     feat1 = self.proj_i(feat1)
-    #     feat2 = self.proj_q(feat2)
-    #
-    #     norm1 = torch.norm(feat1, p=2)
-    #     norm2 = torch.norm(feat2, p=2)
-    #
-    #     factor1 = norm1 / (norm1 + norm2)
-    #     factor2 = norm2 / (norm1 + norm2)
-    #
-    #     exp_out = factor1 * feat1 + factor2 * feat2
-    #     exp_out = self.dropout(exp_out)
-    #     z = self.pool(exp_out) * 2
-    #     z = F.normalize(z)
-    #     return z
-
-class MFB(nn.Module):
-    def __init__(self, C,feat_size):
-        super(MFB, self).__init__()
-        self.C = C
-        self.proj_i = nn.Linear(feat_size,C*feat_size)
-        self.proj_q = nn.Linear(feat_size, C*feat_size)
-        self.dropout = nn.Dropout(0.1)
-        self.pool = nn.AvgPool1d(C, stride=C)
-
-    def forward(self, feat1, feat2):
-        feat1 = self.proj_i(feat1)
-        feat2 = self.proj_q(feat2)
-        exp_out = feat1 * feat2
-        exp_out = self.dropout(exp_out)
-        z = self.pool(exp_out) * self.C
-        z = F.normalize(z)
-        return z
-
-
-class MLB(nn.Module):
-    def __init__(self, C, feat_size):
-        super(MLB, self).__init__()
-        self.C = C
-        self.proj_i = nn.Linear(feat_size, feat_size)
-        self.proj_q = nn.Linear(feat_size, feat_size)
-        self.dropout = nn.Dropout(0.1)
-
-    def forward(self, feat1, feat2):
-        feat1 = self.proj_i(feat1)
-        feat2 = self.proj_q(feat2)
-        exp_out = feat1 * feat2
-        z = self.dropout(exp_out)
-        z = F.normalize(z)
-        return z
-
-
-class CBP(nn.Module):
-    def __init__(self, input_dim1, input_dim2, output_dim,
-                 sum_pool=True, rand_h_1=None, rand_s_1=None, rand_h_2=None, rand_s_2=None):
-        super(CBP, self).__init__()
-        self.input_dim1 = input_dim1
-        self.input_dim2 = input_dim2
-        self.output_dim = output_dim
-        self.sum_pool = sum_pool
-
-        if rand_h_1 is None:
-            np.random.seed(1)
-            rand_h_1 = np.random.randint(output_dim, size=self.input_dim1)
-        if rand_s_1 is None:
-            np.random.seed(3)
-            rand_s_1 = 2 * np.random.randint(2, size=self.input_dim1) - 1
-
-        self.sparse_sketch_matrix1 = Variable(self.generate_sketch_matrix(
-            rand_h_1, rand_s_1, self.output_dim))
-
-        if rand_h_2 is None:
-            np.random.seed(5)
-            rand_h_2 = np.random.randint(output_dim, size=self.input_dim2)
-        if rand_s_2 is None:
-            np.random.seed(7)
-            rand_s_2 = 2 * np.random.randint(2, size=self.input_dim2) - 1
-
-        self.sparse_sketch_matrix2 = Variable(self.generate_sketch_matrix(
-            rand_h_2, rand_s_2, self.output_dim))
-
-
-    def forward(self, bottom1, bottom2):
-
-
-        batch_size, height, width = bottom1.size()
-
-        bottom1_flat = bottom1.permute(0, 2, 1).contiguous().view(-1, self.input_dim1)
-        bottom2_flat = bottom2.permute(0, 2, 1).contiguous().view(-1, self.input_dim2)
-
-        sketch_1 = bottom1_flat.mm(self.sparse_sketch_matrix1)
-        sketch_2 = bottom2_flat.mm(self.sparse_sketch_matrix2)
-
-        fft1 = afft.fft(sketch_1)
-        fft2 = afft.fft(sketch_2)
-
-        fft_product = fft1 * fft2
-        #print(fft_product.shape)
-
-        cbp_flat = afft.ifft(fft_product).real
-
-        cbp = cbp_flat.view(batch_size, height,self.output_dim)
-
-        return cbp
-
-    @staticmethod
-    def generate_sketch_matrix(rand_h, rand_s, output_dim):
-        rand_h = rand_h.astype(np.int64)
-        rand_s = rand_s.astype(np.float32)
-        assert(rand_h.ndim == 1 and rand_s.ndim ==
-               1 and len(rand_h) == len(rand_s))
-        assert(np.all(rand_h >= 0) and np.all(rand_h < output_dim))
-
-        input_dim = len(rand_h)
-        indices = np.concatenate((np.arange(input_dim)[..., np.newaxis],
-                                  rand_h[..., np.newaxis]), axis=1)
-        indices = torch.from_numpy(indices)
-        rand_s = torch.from_numpy(rand_s)
-        sparse_sketch_matrix = torch.sparse.FloatTensor(
-            indices.t(), rand_s, torch.Size([input_dim, output_dim]))
-        return sparse_sketch_matrix.to_dense()
