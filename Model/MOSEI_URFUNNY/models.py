@@ -15,22 +15,22 @@ class MSRG(nn.Module):
         self.SequenceEncoder = SeqEncoder(self.hp)
 
         self.dh_l = self.dh_a = self.dh_v = 128
-        self.project_a = nn.GRU(self.dh_a, 64, bidirectional=True, batch_first=True).cuda()
-        self.project_v = nn.GRU(self.dh_v, 64, bidirectional=True, batch_first=True).cuda()
-        self.project_l = nn.GRU(self.dh_l, 64, bidirectional=True, batch_first=True).cuda()
+        self.project_a = nn.GRU(self.dh_a, 64, bidirectional=True, batch_first=True)
+        self.project_v = nn.GRU(self.dh_v, 64, bidirectional=True, batch_first=True)
+        self.project_l = nn.GRU(self.dh_l, 64, bidirectional=True, batch_first=True)
 
-        self.bi_lstm = nn.LSTM(self.dh_v + self.dh_l + self.dh_a, 128, bidirectional=True, batch_first=True).cuda()
-        self.bi_lstm1 = nn.GRU(128 * 3, 64, batch_first=True, bidirectional=True).cuda()
+        self.bi_lstm = nn.LSTM(self.dh_v + self.dh_l + self.dh_a, 128, bidirectional=True, batch_first=True)
+        self.bi_lstm1 = nn.GRU(128 * 3, 64, batch_first=True, bidirectional=True)
         rgn0 = RGNCell()
-        self.rgn0 = rgn0.cuda()
+        self.rgn0 = rgn0
         rgn1= RGNCell()
-        self.rgn1 =rgn1.cuda()
+        self.rgn1 =rgn1
         fc3 = nn.Linear(256, 128)
-        self.fc3=fc3.cuda()
+        self.fc3=fc3
         fc1 = nn.Linear(128, 32)
-        self.fc1 = fc1.cuda()
+        self.fc1 = fc1
         fc2 = nn.Linear(32, 1)
-        self.fc2 = fc2.cuda()
+        self.fc2 = fc2
             
     def forward(self, sentences, video, acoustic):
         """
@@ -51,7 +51,7 @@ class MSRG(nn.Module):
         x_a_origin,x_v_origin,x_l_origin = x_a_origin.permute(1, 0, 2) ,x_v_origin.permute(1, 0, 2) ,x_l_origin.permute(1, 0, 2)
 
         jcaf = JCAF(x_a_origin.shape[0], x_a_origin.shape[1], x_a_origin.shape[2])
-        self.jcaf = jcaf.cuda()
+        self.jcaf = jcaf
         fin_txt, fin_aud, fin_vis = self.jcaf(x_l_origin, x_a_origin, x_v_origin)
         tstep = torch.concat((fin_txt, fin_aud, fin_vis), dim=2)
         step_fusion, (_, _) = self.bi_lstm(tstep)
