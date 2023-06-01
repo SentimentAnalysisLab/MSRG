@@ -13,7 +13,7 @@ class RGNCell(nn.Module):
         self.dense5 = nn.Linear(256, 128, bias=False)
 
     def forward(self, s_t1, x_t):
-        s_t1=s_t1.cuda()
+        s_t1=s_t1
         r_t = F.relu(self.dense1(x_t))
         m_t = torch.tanh(self.dense2(r_t))
         forget = torch.multiply(m_t, s_t1)
@@ -38,7 +38,7 @@ class JCAF(nn.Module):
         self.W_a = nn.Linear(l, k, bias=False)  # W_a.shape = [k, l]
         self.W_v = nn.Linear(l, k, bias=False)
         self.W_t = nn.Linear(l, k, bias=False)
-        self.dense = nn.Linear(3*128,128,bias=False).cuda()
+        self.dense = nn.Linear(3*128,128,bias=False)
 
         self.W_ca = nn.Linear(2*d, k, bias=False)  # W_ca.shape = [k, d]
         self.W_cv = nn.Linear(2*d, k, bias=False)
@@ -48,7 +48,7 @@ class JCAF(nn.Module):
         self.W_hv = nn.Linear(k, l, bias=False)
         self.W_ht = nn.Linear(k, l, bias=False)
         amlp = AMLP(128)
-        self.amlp = amlp.cuda()
+        self.amlp = amlp
 
 
     def forward(self, f1_norm, f2_norm, f3_norm):  # [k, l, d]
@@ -56,9 +56,9 @@ class JCAF(nn.Module):
         fin_visual_features = []
         fin_text_features = []
 
-        txt_fts = f1_norm.cuda()  # [k, l, 128]
-        aud_fts = f2_norm.cuda()  # [k, l, 128]
-        vis_fts = f3_norm.cuda()  # [k, l, 128]
+        txt_fts = f1_norm  # [k, l, 128]
+        aud_fts = f2_norm  # [k, l, 128]
+        vis_fts = f3_norm  # [k, l, 128]
 
         G=self.amlp(txt_fts,aud_fts,vis_fts)
         for i in range(f1_norm.shape[0]):
