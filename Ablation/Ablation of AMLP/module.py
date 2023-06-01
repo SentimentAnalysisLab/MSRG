@@ -15,7 +15,7 @@ class RGNCell(nn.Module):
         self.dense5 = nn.Linear(256, 128, bias=False)
 
     def forward(self, s_t1, x_t):
-        s_t1=s_t1.cuda()
+        s_t1=s_t1
         r_t = F.relu(self.dense1(x_t))
         m_t = torch.tanh(self.dense2(r_t))
         forget = torch.multiply(m_t, s_t1)
@@ -40,7 +40,7 @@ class JCAF(nn.Module):
         self.W_a = nn.Linear(l, k, bias=False)  # W_a.shape = [k, l]
         self.W_v = nn.Linear(l, k, bias=False)
         self.W_t = nn.Linear(l, k, bias=False)
-        self.dense = nn.Linear(3*128,128,bias=False).cuda()
+        self.dense = nn.Linear(3*128,128,bias=False)
 
         self.W_ca = nn.Linear(2*d, k, bias=False)  # W_ca.shape = [k, d]
         self.W_cv = nn.Linear(2*d, k, bias=False)
@@ -56,9 +56,9 @@ class JCAF(nn.Module):
         fin_visual_features = []
         fin_text_features = []
 
-        txt_fts = f1_norm.cuda()  # [k, l, 128]
-        aud_fts = f2_norm.cuda()  # [k, l, 128]
-        vis_fts = f3_norm.cuda()  # [k, l, 128]
+        txt_fts = f1_norm # [k, l, 128]
+        aud_fts = f2_norm  # [k, l, 128]
+        vis_fts = f3_norm  # [k, l, 128]
 
         # 用于AMLP消融 (和BiAMLP MFB,CBP,MLB 对比)
         G1 = self.mode(txt_fts, aud_fts)
@@ -109,32 +109,6 @@ class JCAF(nn.Module):
         fin_text_features = torch.stack(fin_text_features)  # [k, l, 128]
 
         return fin_text_features, fin_audio_features, fin_visual_features
-
-class AMLP(nn.Module):
-    def __init__(self,feat_size):
-        super(AMLP, self).__init__()
-        self.proj_i = nn.Linear(feat_size, 2*feat_size)
-        self.proj_q = nn.Linear(feat_size, 2*feat_size)
-        self.proj_v = nn.Linear(feat_size, 2*feat_size)
-        self.dropout = nn.Dropout(0.1)
-        self.pool = nn.AvgPool1d(kernel_size=2, stride=2)
-
-    def forward(self, feat1, feat2, feat3):
-        feat1 = self.proj_i(feat1)
-        feat2 = self.proj_q(feat2)
-        feat3 = self.proj_v(feat3)
-
-        norm1 = torch.norm(feat1, p=2)
-        norm2 = torch.norm(feat2, p=2)
-        norm3 = torch.norm(feat3, p=2)
-        factor1 = norm1 / (norm1 + norm2)
-        factor2 = norm2 / (norm1 + norm2)
-        factor3 = norm3/(norm1 + norm2+norm3)
-        exp_out = factor1 * feat1 + factor2 * feat2 + factor3*norm3
-        exp_out = self.dropout(exp_out)
-        z = self.pool(exp_out) * 2
-        z = F.normalize(z)
-        return z
 
 
 class BiAMLP(nn.Module):#双模态带有自适应因子思想（用于AMLP消融研究）
