@@ -62,7 +62,7 @@ class Solver(object):
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', patience=20, factor=0.1, verbose=True)
 
     def train_and_eval(self):
-        model = self.model.cuda()
+        model = self.model
         optimizer = self.optimizer
         scheduler = self.scheduler
         criterion = self.criterion
