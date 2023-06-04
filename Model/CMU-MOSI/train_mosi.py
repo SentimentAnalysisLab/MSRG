@@ -221,14 +221,6 @@ config["h_dims"] = [hl, ha, hv]
 config["batchsize"] = random.choice([32 , 64, 128, 256])
 config["lr"] = random.choice([0.001, 0.002, 0.005, 0.008, 0.01])
 
-"""
-# 超参数
-config["lr"] = 0.005
-config["num_epochs"] = 21
-config["batchsize"] = 32
-config["h_dims"] = [190, 95, 95]
-"""
-
 print(config)
 # 记录运行时间
 start = time.clock()
