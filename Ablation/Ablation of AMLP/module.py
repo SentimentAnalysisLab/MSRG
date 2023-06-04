@@ -111,7 +111,7 @@ class JCAF(nn.Module):
         return fin_text_features, fin_audio_features, fin_visual_features
 
 
-class BiAMLP(nn.Module):#双模态带有自适应因子思想（用于AMLP消融研究）
+class BiAMLP(nn.Module):#AMLP的衍生物，我们将它提出以应用自适应因子思想于双模态，它同样应用于我们的消融实验
     def __init__(self,feat_size):
         super(AMLP, self).__init__()
         self.proj_i = nn.Linear(feat_size, 2*feat_size)
