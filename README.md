@@ -1,4 +1,4 @@
-# Multimodal Sentiment Recognition with Residual Gating Network and Sentiment Intensity Attention
+# Multimodal Sentiment Recognition with Residual Gating Network and Emotion Intensity Attention
 Code for "Multimodal Sentiment Recognition with Residual Gating Network and Sentiment Intensity Attention".
 
 <p>
