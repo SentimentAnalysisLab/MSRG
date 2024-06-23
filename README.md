@@ -20,5 +20,3 @@ conda activate msrg
 If you want to know more about experimental part, click [here](https://drive.google.com/file/d/1a8I2dRd3IPuEunoxXPVGMmcjyyu0uX88/view?usp=sharing) for details.
 ### Ablation
 ```cd Ablation``` for details.
-### Contact
-For any questions, please email at henumzj@henu.edu.cn
